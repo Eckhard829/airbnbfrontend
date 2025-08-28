@@ -14,21 +14,13 @@ const HostManageListings = () => {
     const fetchHostListings = async () => {
       try {
         const config = token ? { headers: { Authorization: `Bearer ${token}` } } : {};
-        // Fetch all listings and filter by host on frontend
-        const res = await axios.get(`${process.env.REACT_APP_API_URL}/api/listings`, config);
-        
-        // Filter to only show APPROVED listings created by this host
-        const hostListings = res.data.filter(listing => 
-          listing.createdBy && 
-          listing.createdBy._id === user.id &&
-          listing.status === 'approved'  // Only show approved listings
-        );
-        
-        console.log('Host approved listings response:', hostListings);
-        setListings(hostListings);
+        // Fetch only listings created by this host
+        const res = await axios.get(`${process.env.REACT_APP_API_URL}/api/listings/host/${user.id}`, config);
+        console.log('Host listings response:', res.data);
+        setListings(res.data);
       } catch (err) {
         console.error('Error fetching host listings:', err.response?.data || err.message);
-        setError('Failed to fetch your approved listings');
+        setError('Failed to fetch your listings');
       } finally {
         setLoading(false);
       }
@@ -83,7 +75,7 @@ const HostManageListings = () => {
   return (
     <div className="container mx-auto px-4 py-8">
       <div className="flex justify-between items-center mb-6">
-        <h1 className="text-3xl font-bold">Your Published Listings</h1>
+        <h1 className="text-3xl font-bold">Your Listings</h1>
         <Link
           to="/host/create-listing"
           className="bg-red-500 text-white px-4 py-2 rounded hover:bg-red-600"
@@ -92,33 +84,17 @@ const HostManageListings = () => {
         </Link>
       </div>
       
-      <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
-        <p className="text-blue-800 text-sm">
-          <strong>Note:</strong> This page shows only your approved and published listings. 
-          To see all your listings (including pending and rejected), visit the "All My Listings" section.
-        </p>
-      </div>
-      
       {listings.length === 0 ? (
         <div className="text-center py-8">
           <div className="text-6xl mb-4">🏠</div>
-          <h2 className="text-2xl font-semibold mb-2">No published listings yet</h2>
-          <p className="text-gray-600 mb-4">Your listings will appear here once they are approved by our admin team.</p>
-          <div className="space-y-2">
-            <Link
-              to="/host/create-listing"
-              className="bg-red-500 text-white px-6 py-3 rounded-full hover:bg-red-600 inline-block"
-            >
-              Create Your First Listing
-            </Link>
-            <br />
-            <Link
-              to="/host/all-listings"
-              className="bg-gray-500 text-white px-6 py-3 rounded-full hover:bg-gray-600 inline-block"
-            >
-              View All My Listings
-            </Link>
-          </div>
+          <h2 className="text-2xl font-semibold mb-2">No listings yet</h2>
+          <p className="text-gray-600 mb-4">Create your first listing to start hosting guests.</p>
+          <Link
+            to="/host/create-listing"
+            className="bg-red-500 text-white px-6 py-3 rounded-full hover:bg-red-600"
+          >
+            Create Your First Listing
+          </Link>
         </div>
       ) : (
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
@@ -162,6 +138,14 @@ const HostManageListings = () => {
                 </div>
               </div>
 
+              {listing.status === 'rejected' && listing.rejectionReason && (
+                <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded">
+                  <p className="text-sm text-red-800">
+                    <strong>Rejection Reason:</strong> {listing.rejectionReason}
+                  </p>
+                </div>
+              )}
+
               <div className="flex gap-2">
                 <Link
                   to={`/host/update-listing/${listing._id}`}
@@ -183,18 +167,12 @@ const HostManageListings = () => {
       
       {listings.length > 0 && (
         <div className="mt-8 text-center text-sm text-gray-500">
-          Total published listings: {listings.length}
+          Total listings: {listings.length} | 
+          Approved: {listings.filter(l => l.status === 'approved').length} | 
+          Pending: {listings.filter(l => (l.status || 'pending') === 'pending').length} |
+          Rejected: {listings.filter(l => l.status === 'rejected').length}
         </div>
       )}
-      
-      <div className="mt-6 text-center">
-        <Link
-          to="/host/all-listings"
-          className="text-blue-600 hover:text-blue-800 underline"
-        >
-          View all my listings (including pending and rejected)
-        </Link>
-      </div>
     </div>
   );
 };
