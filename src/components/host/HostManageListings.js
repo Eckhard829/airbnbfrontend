@@ -14,10 +14,24 @@ const HostManageListings = () => {
     const fetchHostListings = async () => {
       try {
         const config = token ? { headers: { Authorization: `Bearer ${token}` } } : {};
-        // Fetch only listings created by this host
-        const res = await axios.get(`${process.env.REACT_APP_API_URL}/api/listings/host/${user.id}`, config);
-        console.log('Host listings response:', res.data);
-        setListings(res.data);
+        // Fetch all listings and filter on frontend for this host
+        const res = await axios.get(`${process.env.REACT_APP_API_URL}/api/listings`, config);
+        console.log('All listings response:', res.data);
+        
+        // Filter listings created by this host
+        const hostListings = res.data.filter(listing => {
+          // Check if listing has createdBy field and it matches current user
+          if (listing.createdBy) {
+            // Handle both object reference and string ID
+            const createdById = typeof listing.createdBy === 'object' 
+              ? listing.createdBy._id || listing.createdBy.id
+              : listing.createdBy;
+            return createdById === user.id;
+          }
+          return false;
+        });
+        
+        setListings(hostListings);
       } catch (err) {
         console.error('Error fetching host listings:', err.response?.data || err.message);
         setError('Failed to fetch your listings');
