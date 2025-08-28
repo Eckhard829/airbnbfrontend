@@ -1,4 +1,4 @@
-// components/host/HostManageListings.js - Debug version to show all listings
+// components/host/HostManageListings.js - Enhanced Debug Version
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { Link } from 'react-router-dom';
@@ -8,79 +8,125 @@ const HostManageListings = () => {
   const [listings, setListings] = useState([]);
   const [error, setError] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [debugInfo, setDebugInfo] = useState(null);
   const { user, token } = useAuth();
 
   useEffect(() => {
     const fetchHostListings = async () => {
+      console.log('=== FETCH STARTED ===');
+      console.log('User:', user);
+      console.log('Token exists:', !!token);
+      console.log('Token preview:', token ? token.substring(0, 20) + '...' : 'No token');
+      console.log('API URL:', process.env.REACT_APP_API_URL);
+
       try {
         const config = token ? { headers: { Authorization: `Bearer ${token}` } } : {};
+        console.log('Request config:', config);
+
         const res = await axios.get(`${process.env.REACT_APP_API_URL}/api/listings`, config);
-        console.log('All listings response:', res.data);
-        console.log('Current user:', user);
-        console.log('Current user ID:', user?.id);
         
+        console.log('=== API RESPONSE ===');
+        console.log('Status:', res.status);
+        console.log('Response data type:', typeof res.data);
+        console.log('Response data length:', res.data?.length);
+        console.log('Full response:', res.data);
+
+        setDebugInfo({
+          apiResponse: res.data,
+          userInfo: user,
+          tokenExists: !!token,
+          responseLength: res.data?.length || 0
+        });
+
+        if (!res.data || !Array.isArray(res.data)) {
+          console.error('Invalid response format:', res.data);
+          setError('Invalid response format from server');
+          return;
+        }
+
+        if (res.data.length === 0) {
+          console.log('No listings returned from API');
+          setListings([]);
+          return;
+        }
+
         // Debug each listing
         res.data.forEach((listing, index) => {
-          console.log(`Listing ${index}:`, {
-            id: listing._id,
-            title: listing.title,
-            createdBy: listing.createdBy,
-            createdByType: typeof listing.createdBy,
-            hasCreatedBy: !!listing.createdBy,
-            status: listing.status
-          });
+          console.log(`=== LISTING ${index} ===`);
+          console.log('Full listing object:', listing);
+          console.log('Listing ID:', listing._id);
+          console.log('Title:', listing.title);
+          console.log('CreatedBy raw:', listing.createdBy);
+          console.log('CreatedBy type:', typeof listing.createdBy);
+          console.log('Status:', listing.status);
           
           if (listing.createdBy) {
             const createdById = typeof listing.createdBy === 'object' 
               ? listing.createdBy._id || listing.createdBy.id
               : listing.createdBy;
-            console.log(`Listing ${index} createdById:`, createdById);
-            console.log(`Does it match current user?`, createdById === user?.id);
+            console.log('Extracted createdById:', createdById);
+            console.log('Current user ID:', user?.id);
+            console.log('Match?', createdById === user?.id);
+            console.log('Strict match?', createdById.toString() === user?.id?.toString());
           }
         });
-        
-        // OPTION 1: Show ALL listings (uncomment this and comment out the filter below)
-        // setListings(res.data);
-        
-        // OPTION 2: Filter listings created by this host only (current behavior)
+
+        // TEMPORARY: Show ALL listings to see if anything comes through
+        console.log('=== SETTING ALL LISTINGS (TEMPORARY) ===');
+        setListings(res.data);
+
+        // Original filtering logic (commented out for debugging)
+        /*
         const hostListings = res.data.filter(listing => {
-          if (listing.createdBy) {
-            const createdById = typeof listing.createdBy === 'object' 
-              ? listing.createdBy._id || listing.createdBy.id
-              : listing.createdBy;
-            return createdById === user?.id;
+          if (!listing.createdBy || !user?.id) {
+            console.log('Filtering out: missing createdBy or user.id');
+            return false;
           }
-          return false;
+          
+          const createdById = typeof listing.createdBy === 'object' 
+            ? listing.createdBy._id || listing.createdBy.id
+            : listing.createdBy;
+          
+          const match = createdById?.toString() === user.id?.toString();
+          console.log(`Listing ${listing.title}: ${createdById} vs ${user.id} = ${match}`);
+          return match;
         });
         
-        console.log('Filtered host listings:', hostListings);
-        console.log('Host listings count:', hostListings.length);
+        console.log('Filtered host listings:', hostListings.length);
         setListings(hostListings);
-        
-        // OPTION 3: Show host's own listings + all approved listings
-        // const relevantListings = res.data.filter(listing => {
-        //   const isOwnListing = listing.createdBy && 
-        //     (typeof listing.createdBy === 'object' 
-        //       ? (listing.createdBy._id === user?.id || listing.createdBy.id === user?.id)
-        //       : listing.createdBy === user?.id);
-        //   
-        //   const isApproved = listing.status === 'approved';
-        //   
-        //   return isOwnListing || isApproved;
-        // });
-        // console.log('Relevant listings (own + approved):', relevantListings);
-        // setListings(relevantListings);
+        */
         
       } catch (err) {
-        console.error('Error fetching host listings:', err.response?.data || err.message);
-        setError('Failed to fetch your listings');
+        console.error('=== ERROR DETAILS ===');
+        console.error('Error object:', err);
+        console.error('Error message:', err.message);
+        console.error('Error response:', err.response);
+        console.error('Error response data:', err.response?.data);
+        console.error('Error response status:', err.response?.status);
+        console.error('Error response headers:', err.response?.headers);
+        
+        setError(`Failed to fetch listings: ${err.response?.data?.message || err.message}`);
+        setDebugInfo({
+          error: {
+            message: err.message,
+            status: err.response?.status,
+            data: err.response?.data
+          }
+        });
       } finally {
         setLoading(false);
+        console.log('=== FETCH COMPLETED ===');
       }
     };
 
     if (user && token) {
       fetchHostListings();
+    } else {
+      console.log('Skipping fetch - missing user or token');
+      console.log('User exists:', !!user);
+      console.log('Token exists:', !!token);
+      setLoading(false);
+      setError('Missing authentication. Please log in.');
     }
   }, [user, token]);
 
@@ -129,19 +175,65 @@ const HostManageListings = () => {
       ? listing.createdBy._id || listing.createdBy.id
       : listing.createdBy;
     
-    return createdById === user.id;
+    return createdById?.toString() === user.id?.toString();
   };
 
-  if (loading) return <div className="container mx-auto px-4 py-8 text-center">Loading...</div>;
-  if (error) return <div className="container mx-auto px-4 py-8 text-center text-red-500">{error}</div>;
+  if (loading) return (
+    <div className="container mx-auto px-4 py-8">
+      <div className="text-center">
+        <div className="text-lg mb-4">Loading your listings...</div>
+        <div className="text-sm text-gray-600">
+          User: {user?.email || 'Not logged in'}<br/>
+          Token: {token ? 'Present' : 'Missing'}
+        </div>
+      </div>
+    </div>
+  );
+
+  if (error) return (
+    <div className="container mx-auto px-4 py-8">
+      <div className="text-center text-red-500">
+        <h2 className="text-xl font-bold mb-4">Error Loading Listings</h2>
+        <p className="mb-4">{error}</p>
+        {debugInfo && (
+          <div className="text-left bg-gray-100 p-4 rounded max-w-2xl mx-auto">
+            <h3 className="font-bold mb-2">Debug Information:</h3>
+            <pre className="text-xs overflow-auto">
+              {JSON.stringify(debugInfo, null, 2)}
+            </pre>
+          </div>
+        )}
+        <button 
+          onClick={() => window.location.reload()} 
+          className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600 mt-4"
+        >
+          Retry
+        </button>
+      </div>
+    </div>
+  );
 
   return (
     <div className="container mx-auto px-4 py-8">
+      {/* Debug Panel */}
+      {debugInfo && (
+        <div className="bg-yellow-50 border border-yellow-200 rounded p-4 mb-6">
+          <h3 className="font-bold text-yellow-800 mb-2">🐛 Debug Info (Remove in production)</h3>
+          <div className="text-sm">
+            <p><strong>API Response Length:</strong> {debugInfo.responseLength}</p>
+            <p><strong>Current User ID:</strong> {debugInfo.userInfo?.id}</p>
+            <p><strong>Token Present:</strong> {debugInfo.tokenExists ? 'Yes' : 'No'}</p>
+            <p><strong>Showing:</strong> ALL listings (filtering temporarily disabled)</p>
+          </div>
+        </div>
+      )}
+
       <div className="flex justify-between items-center mb-6">
         <div>
           <h1 className="text-3xl font-bold">Your Listings</h1>
           <p className="text-gray-600 mt-1">
             Showing {listings.length} listing{listings.length !== 1 ? 's' : ''}
+            {debugInfo && ` (Total from API: ${debugInfo.responseLength})`}
           </p>
         </div>
         <Link
@@ -157,7 +249,13 @@ const HostManageListings = () => {
           <div className="text-6xl mb-4">🏠</div>
           <h2 className="text-2xl font-semibold mb-2">No listings found</h2>
           <p className="text-gray-600 mb-4">
-            {user ? 'Create your first listing to start hosting guests.' : 'Please log in to view your listings.'}
+            {user ? (
+              debugInfo?.responseLength > 0 
+                ? 'API returned data but no listings match your user ID. Check the debug info above.'
+                : 'The API returned no listings. This could be normal if no listings exist yet.'
+            ) : (
+              'Please log in to view your listings.'
+            )}
           </p>
           <Link
             to="/host/create-listing"
