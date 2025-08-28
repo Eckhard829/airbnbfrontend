@@ -20,8 +20,8 @@ const HostManageListings = () => {
         const hostListings = res.data.filter(listing => 
           listing.createdBy && listing.createdBy._id === user.id
         );
-        console.log('Host listings response:', res.data);
-        setListings(res.data);
+        console.log('Host listings response:', hostListings);
+        setListings(hostListings); // Use the filtered hostListings instead of res.data
       } catch (err) {
         console.error('Error fetching host listings:', err.response?.data || err.message);
         setError('Failed to fetch your listings');
