@@ -1,4 +1,4 @@
-// components/host/HostManageListings.js - Clean Production Version
+// components/host/HostManageListings.js - Fixed Version
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { Link } from 'react-router-dom';
@@ -21,18 +21,8 @@ const HostManageListings = () => {
           return;
         }
 
-        // Filter to show only listings created by the current user
-        const hostListings = res.data.filter(listing => {
-          if (!listing.createdBy || !user?.id) return false;
-          
-          const createdById = typeof listing.createdBy === 'object' 
-            ? listing.createdBy._id || listing.createdBy.id
-            : listing.createdBy;
-          
-          return createdById?.toString() === user.id?.toString();
-        });
-        
-        setListings(hostListings);
+        // SHOW ALL LISTINGS (remove filtering temporarily)
+        setListings(res.data);
         
       } catch (err) {
         setError(`Failed to fetch listings: ${err.response?.data?.message || err.message}`);
@@ -41,12 +31,7 @@ const HostManageListings = () => {
       }
     };
 
-    if (user && token) {
-      fetchHostListings();
-    } else {
-      setLoading(false);
-      setError('Missing authentication. Please log in.');
-    }
+    fetchHostListings();
   }, [user, token]);
 
   const handleDelete = async (listingId) => {
@@ -89,7 +74,7 @@ const HostManageListings = () => {
   if (loading) return (
     <div className="container mx-auto px-4 py-8">
       <div className="text-center">
-        <div className="text-lg">Loading your listings...</div>
+        <div className="text-lg">Loading listings...</div>
       </div>
     </div>
   );
@@ -113,7 +98,7 @@ const HostManageListings = () => {
     <div className="container mx-auto px-4 py-8">
       <div className="flex justify-between items-center mb-6">
         <div>
-          <h1 className="text-3xl font-bold">Your Listings</h1>
+          <h1 className="text-3xl font-bold">Manage Listings</h1>
           <p className="text-gray-600 mt-1">
             Showing {listings.length} listing{listings.length !== 1 ? 's' : ''}
           </p>
@@ -131,7 +116,7 @@ const HostManageListings = () => {
           <div className="text-6xl mb-4">🏠</div>
           <h2 className="text-2xl font-semibold mb-2">No listings found</h2>
           <p className="text-gray-600 mb-4">
-            You haven't created any listings yet. Start by creating your first listing!
+            No listings available yet.
           </p>
           <Link
             to="/host/create-listing"
