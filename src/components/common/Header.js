@@ -25,7 +25,7 @@ const Header = () => {
       <nav className="flex justify-between items-center px-5 py-3 w-full">
         <div className="logo flex items-center">
           <Link to="/">
-            <img src="/images/airbnblogo.png" alt="Airbnb Logo" className="h-8" />
+            <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/6/69/Airbnb_Logo_B%C3%A9lo.svg/1280px-Airbnb_Logo_B%C3%A9lo.svg.png" alt="Airbnb Logo" className="h-8" />
           </Link>
         </div>
         <ul className="flex gap-5 list-none m-0 p-0 max-md:flex-col max-md:items-center max-md:gap-2">
