@@ -37,15 +37,15 @@ const UpdateListing = () => {
         
         const listing = res.data;
         
-        // Check if user owns this listing
-        const createdById = typeof listing.createdBy === 'object' 
-          ? listing.createdBy._id || listing.createdBy.id
-          : listing.createdBy;
+        // TEMPORARILY REMOVE OWNERSHIP CHECK - ALLOW ALL EDITS
+        // const createdById = typeof listing.createdBy === 'object' 
+        //   ? listing.createdBy._id || listing.createdBy.id
+        //   : listing.createdBy;
           
-        if (createdById?.toString() !== user?.id?.toString()) {
-          setError('You do not have permission to edit this listing.');
-          return;
-        }
+        // if (createdById?.toString() !== user?.id?.toString()) {
+        //   setError('You do not have permission to edit this listing.');
+        //   return;
+        // }
 
         // Pre-fill form with existing data
         setFormData({
