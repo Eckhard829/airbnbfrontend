@@ -19,7 +19,7 @@ import HostDashboard from './components/host/HostDashboard';
 import HostManageListings from './components/host/HostManageListings';
 import HostReservations from './components/host/HostReservations';
 import CreateListing from './components/host/CreateListing';
-import UpdateListing from './components/admin/UpdateListing';
+import UpdateListing from './components/host/UpdateListing'; // Changed from admin to host
 
 import { AuthProvider } from './utils/AuthContext';
 import ProtectedRoute from './utils/ProtectedRoute';
